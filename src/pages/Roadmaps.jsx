@@ -81,7 +81,7 @@ function ProgressRing({ percentage }) {
   return (
     <div className="relative w-16 h-16 shrink-0">
       <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r={radius} fill="none" strokeWidth="5" className="stroke-zinc-800" />
+        <circle cx="32" cy="32" r={radius} fill="none" strokeWidth="5" className="stroke-black/[0.08] dark:stroke-white/[0.08]" />
         <circle
           cx="32"
           cy="32"
@@ -89,12 +89,12 @@ function ProgressRing({ percentage }) {
           fill="none"
           strokeWidth="5"
           strokeLinecap="round"
-          className="stroke-white transition-all duration-500 ease-out"
+          className="stroke-zinc-900 dark:stroke-white transition-all duration-500 ease-out"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">
+      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-zinc-900 dark:text-white">
         {Math.round(percentage)}%
       </span>
     </div>
@@ -111,14 +111,15 @@ export default function Roadmaps() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return;
+
       const { domain, completed } = JSON.parse(saved);
       if (domain && roadmapData[domain]) {
         setSelectedDomain(domain);
         setActiveRoadmap(roadmapData[domain]);
         setCompletedItems(new Set(completed));
       }
-    } catch (e) {
-      // Fail silently
+    } catch {
+      // Corrupted or missing storage — fail silently, user just starts fresh
     }
   }, []);
 
@@ -138,6 +139,7 @@ export default function Roadmaps() {
     setIsGenerating(true);
     setActiveRoadmap(null);
     setCompletedItems(new Set());
+
     setTimeout(() => {
       setActiveRoadmap(roadmapData[selectedDomain]);
       setIsGenerating(false);
@@ -158,8 +160,13 @@ export default function Roadmaps() {
 
   const { totalItems, completedCount, percentage } = useMemo(() => {
     if (!activeRoadmap) return { totalItems: 0, completedCount: 0, percentage: 0 };
-    const total = activeRoadmap.stages.reduce((sum, stage) => sum + stage.subjects.length + stage.skills.length, 0);
+
+    const total = activeRoadmap.stages.reduce(
+      (sum, stage) => sum + stage.subjects.length + stage.skills.length,
+      0
+    );
     const completed = completedItems.size;
+
     return {
       totalItems: total,
       completedCount: completed,
@@ -168,60 +175,87 @@ export default function Roadmaps() {
   }, [activeRoadmap, completedItems]);
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white tracking-tight">Career Roadmaps</h1>
-        <p className="text-sm text-zinc-500 mt-1">Pick your domain and get a path to mastery.</p>
+        <h1 className="text-xl text-zinc-900 dark:text-white font-bold tracking-tight">Career Roadmaps</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400/80 mt-1">
+          Pick your domain and get a semester-by-semester path to mastery.
+        </p>
       </div>
 
-      <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-5">
+      <div className="bg-white/70 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] rounded-2xl p-6 transition-colors duration-300">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <select
               value={selectedDomain}
               onChange={(e) => setSelectedDomain(e.target.value)}
-              className="w-full appearance-none bg-zinc-900 border border-zinc-800 rounded-md pl-3 pr-9 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-zinc-700 focus:border-zinc-700 cursor-pointer"
+              className="w-full appearance-none bg-black/[0.02] border border-black/[0.08] text-zinc-900 focus:border-black/20 focus:ring-black/5 dark:bg-white/[0.03] dark:border-white/[0.1] dark:text-white dark:focus:border-white/30 dark:focus:ring-white/5 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer"
             >
-              <option value="" disabled className="bg-zinc-950">Select your engineering domain</option>
+              <option value="" disabled className="bg-white dark:bg-[#03000a]">
+                Select your engineering domain
+              </option>
               {Object.entries(roadmapData).map(([key, value]) => (
-                <option key={key} value={key} className="bg-zinc-950">{value.label}</option>
+                <option key={key} value={key} className="bg-white dark:bg-[#03000a]">
+                  {value.label}
+                </option>
               ))}
             </select>
-            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+            <ChevronDown
+              size={16}
+              strokeWidth={1.75}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 pointer-events-none"
+            />
           </div>
+
           <button
             onClick={handleGenerate}
             disabled={!selectedDomain || isGenerating}
-            className="flex items-center justify-center gap-2 bg-white hover:bg-gray-100 disabled:bg-zinc-800 text-black disabled:text-zinc-600 disabled:cursor-not-allowed text-sm font-medium rounded-md px-4 py-2 transition-colors"
+            className="flex items-center justify-center gap-2 bg-gradient-to-b from-black/5 to-black/[0.02] hover:from-black/10 hover:to-black/5 disabled:from-black/[0.02] disabled:to-black/[0.02] disabled:text-zinc-400 text-zinc-800 border border-zinc-300/50 shadow-[0_4px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.5)] hover:border-zinc-400/50 dark:from-white/10 dark:to-white/[0.02] dark:hover:from-white/15 dark:hover:to-white/5 dark:disabled:from-white/[0.02] dark:disabled:to-white/[0.02] dark:disabled:text-zinc-600 dark:text-white dark:border-white/20 dark:shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] dark:hover:border-white/30 disabled:cursor-not-allowed text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-300 whitespace-nowrap"
           >
-            {isGenerating ? <Loader2 size={16} className="animate-spin text-zinc-600" /> : <Sparkles size={15} />}
-            {isGenerating ? 'Generating...' : 'Generate Career Path'}
+            {isGenerating ? (
+              <>
+                <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles size={15} strokeWidth={2} />
+                Generate Career Path
+              </>
+            )}
           </button>
         </div>
       </div>
 
       {activeRoadmap && (
-        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 sm:p-8">
-          <div className="flex items-center justify-between mb-8 pb-6 border-b border-zinc-800">
+        <div className="bg-white/70 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:bg-white/[0.03] dark:border-white/[0.08] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] rounded-2xl p-6 sm:p-8 transition-colors duration-300">
+          <div className="flex items-center justify-between mb-8 pb-6 border-b border-black/[0.06] dark:border-white/[0.08]">
             <div>
-              <h2 className="text-sm font-medium text-white mb-1">{activeRoadmap.label} — Suggested Path</h2>
-              <p className="text-xs text-zinc-500">{completedCount} of {totalItems} milestones completed</p>
+              <h2 className="text-sm text-zinc-900 dark:text-white font-bold mb-1">
+                {activeRoadmap.label} — Suggested Path
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400/70">
+                {completedCount} of {totalItems} milestones completed
+              </p>
             </div>
             <ProgressRing percentage={percentage} />
           </div>
 
           <div className="relative pl-8">
-            <div className="absolute left-[7px] top-1 bottom-1 w-px bg-zinc-800" />
+            <div className="absolute left-[7px] top-1 bottom-1 w-px bg-black/[0.08] dark:bg-white/[0.08]" />
+
             <div className="space-y-10">
               {activeRoadmap.stages.map((stage, stageIndex) => (
                 <div key={stage.phase} className="relative">
-                  <div className="absolute -left-8 top-1 w-3.5 h-3.5 rounded-full bg-zinc-950 border-2 border-white" />
-                  <h3 className="text-white text-sm font-semibold mb-3">{stage.phase}</h3>
+                  <div className="absolute -left-8 top-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-[#120018] border-2 border-zinc-900/60 dark:border-white/60" />
+
+                  <h3 className="text-zinc-900 dark:text-white text-sm font-bold mb-3">{stage.phase}</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3.5">
+                    <div className="bg-black/[0.02] border border-black/[0.05] dark:bg-white/[0.04] dark:border-white/[0.05] rounded-xl p-3.5">
                       <div className="flex items-center gap-2 mb-2.5">
-                        <BookOpen size={14} className="text-zinc-400" />
-                        <span className="text-xs font-medium text-zinc-500">Core Subjects</span>
+                        <BookOpen size={14} strokeWidth={1.75} className="text-zinc-800 dark:text-white" />
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400/80">Core Subjects</span>
                       </div>
                       <ul className="space-y-1.5">
                         {stage.subjects.map((s, i) => {
@@ -229,9 +263,26 @@ export default function Roadmaps() {
                           const done = completedItems.has(key);
                           return (
                             <li key={key}>
-                              <button onClick={() => toggleItem(key)} className="w-full flex items-start gap-2 text-left group">
-                                {done ? <CheckCircle2 size={14} className="text-white shrink-0 mt-0.5" /> : <Circle size={14} className="text-zinc-600 group-hover:text-zinc-400 shrink-0 mt-0.5" />}
-                                <span className={`text-xs ${done ? 'text-zinc-600 line-through' : 'text-zinc-300'}`}>{s}</span>
+                              <button
+                                onClick={() => toggleItem(key)}
+                                className="w-full flex items-start gap-2 text-left group"
+                              >
+                                {done ? (
+                                  <CheckCircle2 size={14} strokeWidth={1.75} className="text-zinc-900 dark:text-white shrink-0 mt-0.5" />
+                                ) : (
+                                  <Circle
+                                    size={14}
+                                    strokeWidth={1.75}
+                                    className="text-zinc-300 group-hover:text-zinc-500 dark:text-zinc-600 dark:group-hover:text-zinc-400 shrink-0 mt-0.5 transition-colors"
+                                  />
+                                )}
+                                <span
+                                  className={`text-xs transition-colors ${
+                                    done ? 'text-zinc-400 dark:text-zinc-500 line-through' : 'text-zinc-700 dark:text-zinc-200'
+                                  }`}
+                                >
+                                  {s}
+                                </span>
                               </button>
                             </li>
                           );
@@ -239,10 +290,10 @@ export default function Roadmaps() {
                       </ul>
                     </div>
 
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3.5">
+                    <div className="bg-black/[0.02] border border-black/[0.05] dark:bg-white/[0.04] dark:border-white/[0.05] rounded-xl p-3.5">
                       <div className="flex items-center gap-2 mb-2.5">
-                        <Wrench size={14} className="text-zinc-400" />
-                        <span className="text-xs font-medium text-zinc-500">Skills to Learn</span>
+                        <Wrench size={14} strokeWidth={1.75} className="text-zinc-800 dark:text-white" />
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400/80">Skills to Learn</span>
                       </div>
                       <ul className="space-y-1.5">
                         {stage.skills.map((s, i) => {
@@ -250,9 +301,26 @@ export default function Roadmaps() {
                           const done = completedItems.has(key);
                           return (
                             <li key={key}>
-                              <button onClick={() => toggleItem(key)} className="w-full flex items-start gap-2 text-left group">
-                                {done ? <CheckCircle2 size={14} className="text-white shrink-0 mt-0.5" /> : <Circle size={14} className="text-zinc-600 group-hover:text-zinc-400 shrink-0 mt-0.5" />}
-                                <span className={`text-xs ${done ? 'text-zinc-600 line-through' : 'text-zinc-300'}`}>{s}</span>
+                              <button
+                                onClick={() => toggleItem(key)}
+                                className="w-full flex items-start gap-2 text-left group"
+                              >
+                                {done ? (
+                                  <CheckCircle2 size={14} strokeWidth={1.75} className="text-zinc-900 dark:text-white shrink-0 mt-0.5" />
+                                ) : (
+                                  <Circle
+                                    size={14}
+                                    strokeWidth={1.75}
+                                    className="text-zinc-300 group-hover:text-zinc-500 dark:text-zinc-600 dark:group-hover:text-zinc-400 shrink-0 mt-0.5 transition-colors"
+                                  />
+                                )}
+                                <span
+                                  className={`text-xs transition-colors ${
+                                    done ? 'text-zinc-400 dark:text-zinc-500 line-through' : 'text-zinc-700 dark:text-zinc-200'
+                                  }`}
+                                >
+                                  {s}
+                                </span>
                               </button>
                             </li>
                           );
@@ -260,12 +328,12 @@ export default function Roadmaps() {
                       </ul>
                     </div>
 
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3.5">
+                    <div className="bg-black/[0.02] border border-black/[0.05] dark:bg-white/[0.04] dark:border-white/[0.05] rounded-xl p-3.5">
                       <div className="flex items-center gap-2 mb-2.5">
-                        <Rocket size={14} className="text-zinc-400" />
-                        <span className="text-xs font-medium text-zinc-500">Target Project</span>
+                        <Rocket size={14} strokeWidth={1.75} className="text-zinc-800 dark:text-white" />
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400/80">Target Project</span>
                       </div>
-                      <p className="text-xs text-zinc-300">{stage.project}</p>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-200">{stage.project}</p>
                     </div>
                   </div>
                 </div>
@@ -276,8 +344,10 @@ export default function Roadmaps() {
       )}
 
       {!activeRoadmap && !isGenerating && (
-        <div className="bg-zinc-950 border border-dashed border-zinc-800 rounded-xl p-10 text-center">
-          <p className="text-sm text-zinc-500">Select a domain above to generate your personalized roadmap.</p>
+        <div className="bg-black/[0.02] border border-dashed border-black/[0.1] dark:bg-white/[0.02] dark:border-white/[0.1] rounded-2xl p-10 text-center transition-colors duration-300">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400/80">
+            Select a domain above to generate your personalized roadmap.
+          </p>
         </div>
       )}
     </div>
